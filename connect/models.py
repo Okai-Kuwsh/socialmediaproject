@@ -11,7 +11,7 @@ class Interest(models.Model):
 
 
 class Profile(models.Model):
-    dob = models.DateField(default=False)
+    dob = models.DateField(default=False)#These are all attributes to do with the Profile object
     gender = models.TextField(max_length=100)
     name = models.TextField(max_length=100)
     interests = models.ManyToManyField(
@@ -19,8 +19,8 @@ class Profile(models.Model):
         symmetrical=False
     )
 
-class Member(User):
-    username = models.TextField(max_length=100)
+class Member(User):#object
+    username = models.TextField(max_length=100)#These are all attributes to do with the Member object
     password = models.TextField(max_length=100)
     profile = models.OneToOneField(
         to=Profile,
