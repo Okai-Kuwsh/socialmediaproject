@@ -3,33 +3,37 @@ from django.http import HttpResponse, QueryDict, HttpResponseBadRequest, JsonRes
 from .models import Interest, Profile, Member
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
-from datetime import date
+from django.db.models.functions import datetime
 
 
 def getContext(request):
     return {
-        sitename: "Connect"
+        "sitename": "Connect"
     }
 
+@csrf_exempt
 def signup(request):
     if request.method == "GET":
-        return render(request, "./templates/signup.html", getContext(request))
+        return render(request, "connect/signup.html", getContext(request))
     elif request.method == "POST":
-        prof = Profile.objects.create(dob=datetime.datetime.strptime(request["POST"]['profile[dob]'][0], "%Y-%m-%d").date(),gender=request["POST"]["profile[gender"])
+        print(request.POST)
+        prof = Profile.objects.create(name=request.POST['profile[name]'],dob=datetime.datetime.strptime(request.POST['profile[dob]'], "%Y-%m-%d").date(),gender=request.POST["profile[gender]"])
         prof.save()
-        mem = Member.objects.create(username=request["POST"]["username"],password=request["POST"]["password"])
+        mem = Member.objects.create(username=request.POST["username"])
+        mem.set_password(request.POST["password"])
         mem.profile = prof
         mem.save()
         return HttpResponse()
 
+@csrf_exempt
 def login(request):
     if request.method == "GET":
-        return render(request, "./templates/login.html", getContext(request))
+        return render(request, "connect/login.html", getContext(request))
     elif request.method == "POST":
         try:
-            user = Member.objects.get(username=request["POST"]["username"])
-            if user.password == request(["POST"]["password"]):
-                request.session["username"] = request["POST"]["username"]
+            user = Member.objects.get(username=request.POST["username"])
+            if user.password == request.POST["password"]:
+                request.session["username"] = request.POST["username"]
                 prof = user.profile
                 request.session["profile"] = prof
                 return HttpResponse()
@@ -37,3 +41,28 @@ def login(request):
                 return HttpResponseBadRequest("Authentication Failed")
         except Member.DoesNotExist:
             return HttpResponseBadRequest("Authentication Failed")
+
+
+@csrf_exempt
+def profile(request, id):
+    if request.method == "GET":
+        context = getContext(request)
+        profile = Member.objects.get(id=id).profile
+        context.profile = profile
+        return render(request, "connect/profile.html", context)
+
+
+@csrf_exempt
+def userProfile(request):
+    if request.method == "GET":
+        context = getContext(request)
+        context.profile = request.session["profile"]
+        return render(request, "connect/profile.html", context)
+
+
+@csrf_exempt
+def home(request):
+    if request.method == "GET":
+        context = getContext(request)
+        return render(request, "connect/index.html", context)
+
