@@ -1,0 +1,16 @@
+<div id="profileDiv">
+        <br /><br />
+        <label class="profileLabel" for="name">Name:</label><br />
+        <span id="name">{{ profile.name }}</span>
+        <br /><br />
+        <label class="profileLabel" for="dob">Date of Birth:</label><br />
+        <span id="dob">{{ profile.dob }}</span>
+        <br /><br />
+        <label class="profileLabel" for="gender">Gender:</label><br />
+        <span id="gender">{{ profile.gender }}</span>
+        <br /><br />
+        <label class="profileLabel" for="interests">Interests:</label>
+        {% for hobby in profile.interests %}
+            <p id="{{ hobby }}-label">{{ hobby.name }}</p>
+        {% endfor %}
+    </div>
