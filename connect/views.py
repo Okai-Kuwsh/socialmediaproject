@@ -14,10 +14,21 @@ def getContext(request):
 @csrf_exempt
 def signup(request):
     if request.method == "GET":
-        return render(request, "connect/signup.html", getContext(request))
+        context = getContext(request)
+        interests = []
+        for interest in Interest.objects.all():
+            interests.append({
+                "type": interest.type,
+                "name": interest.name
+            })
+        return render(request, "connect/signup.html", context)
     elif request.method == "POST":
         print(request.POST)
         prof = Profile.objects.create(name=request.POST['profile[name]'],dob=datetime.datetime.strptime(request.POST['profile[dob]'], "%Y-%m-%d").date(),gender=request.POST["profile[gender]"])
+        interests = []
+        for interest in request.POST['profile[interests]']:
+            interests.append(Interest.objects.get(name=interest))
+        prof.interests = interests
         prof.save()
         mem = Member.objects.create(username=request.POST["username"])
         mem.set_password(request.POST["password"])
@@ -67,9 +78,9 @@ def home(request):
         members = Member.objects.all()
         profiles = []
         for member in members:
-            if member.profile != request.session["profile"]:                
+            if member.profile != request.session["profile"]:
                 profiles.append(member.profile)
         context.profiles = profiles
         return render(request, "connect/index.html", context)
-    
+
 
