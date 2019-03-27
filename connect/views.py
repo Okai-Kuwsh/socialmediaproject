@@ -64,5 +64,12 @@ def userProfile(request):
 def home(request):
     if request.method == "GET":
         context = getContext(request)
+        members = Member.objects.all()
+        profiles = []
+        for member in members:
+            if member.profile != request.session["profile"]:                
+                profiles.append(member.profile)
+        context.profiles = profiles
         return render(request, "connect/index.html", context)
+    
 
