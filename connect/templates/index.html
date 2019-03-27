@@ -1,0 +1,119 @@
+{% extends "matchingapp/base.html" %}
+
+{% load staticfiles %}
+
+{% block content %}
+<div align="center" id="usersDiv">
+    <br/>
+    <div id="usersTopRow">USERS</div>
+
+    {% for profile in proflies %}
+    <p> {{profile.name}}</p>
+    <p>{{profile.dob}}</p>
+    <p>{{profile.gender}}</p>
+    <p>{{', '.join(x for x in profile.interests}}</p>
+    {% endfor %}
+    <div align="center" id="usersTable" class="container">
+        <div class="row" id="usersRow1">
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block script %}
+    <script>
+
+        // Ensures that the filter checkboxes are checked on load
+        document.getElementById("Male_chckbox").checked = true;
+        document.getElementById("Female_chckbox").checked = true;
+        document.getElementById("Other_chckbox").checked = true;
+
+        let profiles = [];
+
+        let csrftoken = Cookies.get('csrftoken');
+
+        let slider =  $("#slider-range");
+        let age_range = $("#age_range");
+
+        profile = {{ profile|safe }};
+        let profHobbies = JSON.parse(profile.hobbies);
+        let hobbies = [];
+        for (var hobby in profHobbies){
+            hobbies.push(profHobbies[hobby].fields.name)
+        }
+
+        // Ajax API query to get all of the profiles for the other users which the user hasn't already matched with or requested to match
+        $.ajax({
+            url: '/getUsers',
+            type: 'GET',
+            beforeSend: function(xhr) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            },
+            success: function (data) {
+                // Once the data is returned, the profiles are sorted in order of how many common hobbies the users share
+                // The profiles are then added to the profiles table
+                profiles = data;
+                profiles.sort(function(a, b){
+                    let aHobs = a.hobbies;
+                    let bHobs = b.hobbies;
+                    let aCom = 0;
+                    let bCom = 0;
+                    for (let i = 0; i < aHobs.length; i++)
+                    {
+                        if (hobbies.indexOf(aHobs[i]) > -1){
+                            aCom++;
+                        }
+                    }
+                    for (let i = 0; i < bHobs.length; i++)
+                    {
+                        if (hobbies.indexOf(bHobs[i]) > -1){
+                            bCom++;
+                        }
+                    }
+                    if (aCom === bCom)
+                    {
+                        return (bCom/bHobs.length) - (aCom/aHobs.length);
+                    } else {
+                        return bCom - aCom;
+                    }
+                });
+                let alt_text;
+                for (let i = 0; i<profiles.length; i++){
+                    alt_text = "Click to view " + profiles[i].name + "'s profile";
+                    $('#usersRow1').append("<div onclick=\"window.location.pathname='/profile/"+profiles[i].id+"';\" align='center' style='margin: 0 auto' id='pfl"+profiles[i].id+"'><div class='card' style='width: 15rem;'><img class='card-img-top' src='../.."+profiles[i].img+"' title=\""+alt_text+"\" /><div class='card-body'><h5 class='card-title'>"+profiles[i].name+"</h5><p class='card-text'>Hobbies:</p><p class='card-text'>"+profiles[i].hobbies.join(", ")+"</p><a href=\'/profile/"+profiles[i].id+"\' class='btn btn-primary'>Visit profile</a></div></div></div>");
+                }
+            },
+            failure: function (data) {
+            },
+            error: function (data) {
+            }
+        });
+
+        // When the slider is moved, the age_range variable is updated
+          $( function() {
+            slider.slider({
+              range: true,
+              min: 18,
+              max: 99,
+              values: [18, 99],
+              slide: function( event, ui ) {
+                age_range.val( ui.values[ 0 ] + " - " + ui.values[ 1 ] );
+              }
+            });
+            age_range.val( slider.slider( "values", 0 ) +
+              " - " + slider.slider( "values", 1 ) );
+          } );
+
+          // When the user presses the filter button, the profiles which don't match the criteria are hidden
+          function updateList() {
+              profiles.forEach(function (pfl) {
+                  if ((pfl.age >= slider.slider("values", 0)) && (pfl.age <= slider.slider("values", 1)) && (document.getElementById(pfl.gender + '_chckbox').checked)) {
+                    $('#pfl' + pfl.id).show();
+                  } else {
+                    $('#pfl' + pfl.id).hide();
+                  }
+              });
+          }
+    </script>
+{% endblock %}
